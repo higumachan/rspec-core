@@ -27,6 +27,8 @@ module RSpec::Core
       end
     end
 
+    actions 'empty actions' do
+    end
 
     actions 'only context' do
       action 'set rikka is cute' do

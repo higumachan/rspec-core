@@ -32,6 +32,10 @@ module RSpec
         def actions(description, &actions_block)
           context description do
             self.module_exec(&actions_block)
+            if __action_dags.empty?
+              pending 'actions is empty'
+              return
+            end
             node = __action_dags[:root]
 
             self.module_exec(&create_from_dag(node))
