@@ -17,13 +17,12 @@ module RSpec
           Proc.new do ||
             node[:forwards].each do |next_node_name|
             next_node = __action_dags[next_node_name]
-            context next_node_name do
-              before(&next_node[:action_block])
+            context next_node[:action][:description] do
+              before(&next_node[:action][:block])
               next_node[:examples].each do |example_info|
                 example(example_info[:description], &example_info[:block])
               end
               context_proc = create_from_dag(next_node)
-              #self.module_exec(&context_proc) if context_proc
               self.module_exec(&context_proc) if context_proc
             end
           end
@@ -34,12 +33,14 @@ module RSpec
           context description do
             self.module_exec(&actions_block)
             node = __action_dags[:root]
+
             self.module_exec(&create_from_dag(node))
           end
         end
 
-        def action(name, description, before_action_name=nil, &action_block)
+        def action(description, name=nil, before_action_name=nil, &action_block)
           before_action_name = (not before_action_name.nil?) ? before_action_name : __before_action_name
+          name = name || "#{description.gsub(/ /, "_")}_#{__action_dags.size}".to_sym
 
           _actions = __actions
           idempotently_define_singleton_method(:__actions) do ||
@@ -65,7 +66,7 @@ module RSpec
           _action_dags[name].merge!({
             forwards: _action_dags[name][:forwards],
             backwards: _action_dags[name][:backwards] | [before_action_name],
-            action_block: action_block
+            action: {description: description, block: action_block},
           })
           _action_dags[before_action_name].merge!({
             forwards: _action_dags[before_action_name][:forwards] | [name],

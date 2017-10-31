@@ -9,7 +9,7 @@ module RSpec::Core
     end
 
     actions 'first action' do
-      action :nadeko, 'set nadeko is cute' do
+      action 'set nadeko is cute' do
         @nadeko_is = 'cute'
       end
 
@@ -17,7 +17,7 @@ module RSpec::Core
         expect(@nadeko_is).to eq 'cute'
       end
 
-      action :rikka, 'set rikka is cute' do
+      action 'set rikka is cute' do
         @rikka_is = 'cute'
       end
 
@@ -27,8 +27,9 @@ module RSpec::Core
       end
     end
 
+
     actions 'only context' do
-      action :rikka, 'set rikka is cute' do
+      action 'set rikka is cute' do
         @rikka_is = 'cute'
       end
 
@@ -38,14 +39,14 @@ module RSpec::Core
     end
 
     actions 'use before_action_name' do
-      action :nadeko, 'set nadeko is cute' do
+      action 'set nadeko is cute', :nadeko do
         @nadeko_is = 'cute'
       end
       check 'nadeko_is = "cute"' do
         expect(@nadeko_is).to eq 'cute'
       end
 
-      action :rikka, 'set rikka is cute' do
+      action 'set rikka is cute' do
         @rikka_is = 'cute'
       end
       check 'nadeko_is = "cute" and rikka_is = "cute"' do
