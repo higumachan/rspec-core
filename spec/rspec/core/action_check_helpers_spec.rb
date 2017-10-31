@@ -8,10 +8,11 @@ module RSpec::Core
       @rikka_is = nil
     end
 
-    describe 'first action' do
+    actions 'first action' do
       action :nadeko, 'set nadeko is cute' do
         @nadeko_is = 'cute'
       end
+
       check 'nadeko_is = "cute"' do
         expect(@nadeko_is).to eq 'cute'
       end
@@ -19,13 +20,14 @@ module RSpec::Core
       action :rikka, 'set rikka is cute' do
         @rikka_is = 'cute'
       end
+
       check 'nadeko_is = "cute" and rikka_is = "cute"' do
         expect(@nadeko_is).to eq 'cute'
         expect(@rikka_is).to eq 'cute'
       end
     end
 
-    describe 'only context' do
+    actions 'only context' do
       action :rikka, 'set rikka is cute' do
         @rikka_is = 'cute'
       end
@@ -35,7 +37,7 @@ module RSpec::Core
       end
     end
 
-    describe 'use before_action_name' do
+    actions 'use before_action_name' do
       action :nadeko, 'set nadeko is cute' do
         @nadeko_is = 'cute'
       end

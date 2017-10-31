@@ -6,51 +6,87 @@ module RSpec
         def __actions
           {}
         end
-        def __before_action
-          nil
+        def __before_action_name
+          :root
+        end
+        def __action_dags
+          {}
+        end
+
+        def create_from_dag(node)
+          Proc.new do ||
+            node[:forwards].each do |next_node_name|
+            next_node = __action_dags[next_node_name]
+            context next_node_name do
+              before(&next_node[:action_block])
+              next_node[:examples].each do |example_info|
+                example(example_info[:description], &example_info[:block])
+              end
+              context_proc = create_from_dag(next_node)
+              #self.module_exec(&context_proc) if context_proc
+              self.module_exec(&context_proc) if context_proc
+            end
+          end
+          end
+        end
+
+        def actions(description, &actions_block)
+          context description do
+            self.module_exec(&actions_block)
+            node = __action_dags[:root]
+            self.module_exec(&create_from_dag(node))
+          end
         end
 
         def action(name, description, before_action_name=nil, &action_block)
-          before_action = (not before_action_name.nil?) ? __actions[before_action_name] : (__before_action || self)
+          before_action_name = (not before_action_name.nil?) ? before_action_name : __before_action_name
 
-          thread_data = RSpec::Support.thread_local_data
-          top_level = self == ExampleGroup
-
-          registration_collection =
-            if top_level
-              if thread_data[:in_example_group]
-                raise "Creating an isolated context from within a context is " \
-                      "not allowed. Change `RSpec.#{name}` to `#{name}` or " \
-                      "move this to a top-level scope."
-              end
-
-              thread_data[:in_example_group] = true
-              RSpec.world.example_groups
-            else
-              children
-            end
-          context = self.subclass(before_action, description, [], registration_collection)
-          context.before(&action_block)
-
-          actions = __actions
+          _actions = __actions
           idempotently_define_singleton_method(:__actions) do ||
-            actions[name] = context
-            actions
-          end
-          idempotently_define_singleton_method(:__before_action) do ||
-            context
+            _actions[name] = context
+            _actions
           end
 
+          idempotently_define_singleton_method(:__before_action_name) do ||
+            name
+          end
 
-          RSpec::Support.thread_local_data[:__before_action] = context
-          RSpec::Support.thread_local_data[:__actions] = {} if RSpec::Support.thread_local_data[:__actions].nil?
-          RSpec::Support.thread_local_data[:__actions][name] = context
+          _action_dags = __action_dags
+          _action_dags[name] = {
+            forwards: [],
+            backwards: [],
+            examples: [],
+          } if _action_dags[name].nil?
+          _action_dags[before_action_name] = {
+            forwards: [],
+            backwards: [],
+            examples: [],
+          } if _action_dags[before_action_name].nil?
+          _action_dags[name].merge!({
+            forwards: _action_dags[name][:forwards],
+            backwards: _action_dags[name][:backwards] | [before_action_name],
+            action_block: action_block
+          })
+          _action_dags[before_action_name].merge!({
+            forwards: _action_dags[before_action_name][:forwards] | [name],
+            backwards: _action_dags[before_action_name][:backwards],
+          })
+          idempotently_define_singleton_method(:__action_dags) do ||
+            _action_dags
+          end
         end
 
         def check(description, checked_action_name=nil, &action_block)
-          check_action =  (not checked_action_name.nil?) ? __actions[checked_action_name] : __before_action
+          check_action_name =  checked_action_name  || __before_action_name
 
-          RSpec::Core::Example.new(check_action, description, {}, action_block)
+          _action_dags = __action_dags
+          _action_dags[check_action_name][:examples] << {
+            description: description,
+            block: action_block,
+          }
+          idempotently_define_singleton_method(:__action_dags) do ||
+            _action_dags
+          end
         end
       end
     end
