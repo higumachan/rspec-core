@@ -31,6 +31,8 @@ module RSpec
 
       include MemoizedHelpers
       extend MemoizedHelpers::ClassMethods
+      include ActionCheckHelpers
+      extend ActionCheckHelpers::ClassMethods
       include Pending
       extend SharedExampleGroup
 

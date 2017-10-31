@@ -20,6 +20,7 @@ RSpec::Support.define_optimized_require_for_rspec(:core) { |f| require_relative 
 
   hooks
   memoized_helpers
+  action_check_helpers
   metadata
   metadata_filter
   pending
