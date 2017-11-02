@@ -44,29 +44,7 @@ module RSpec
           name = "#{description.gsub(/ /, "_")}_#{__action_dags.size}".to_sym
           before_action_name = __before_action_name
 
-          _action_dags = __action_dags
-          _action_dags[name] = {
-            forwards: [],
-            backwards: [],
-            examples: [],
-          } if _action_dags[name].nil?
-          _action_dags[before_action_name] = {
-            forwards: [],
-            backwards: [],
-            examples: [],
-          } if _action_dags[before_action_name].nil?
-          _action_dags[name].merge!({
-            forwards: _action_dags[name][:forwards],
-            backwards: _action_dags[name][:backwards] | [before_action_name],
-            action: {description: "branch:#{description}", block: Proc.new {} },
-          })
-          _action_dags[before_action_name].merge!({
-            forwards: _action_dags[before_action_name][:forwards] | [name],
-            backwards: _action_dags[before_action_name][:backwards],
-          })
-          idempotently_define_singleton_method(:__action_dags) do ||
-            _action_dags
-          end
+          _update_action_dags(name, description, before_action_name, Proc.new{})
 
           context do
             idempotently_define_singleton_method(:__before_action_name) do ||
@@ -80,11 +58,27 @@ module RSpec
           before_action_name = (not before_action_name.nil?) ? before_action_name : __before_action_name
           name = name || "#{description.gsub(/ /, "_")}_#{__action_dags.size}".to_sym
 
-
           idempotently_define_singleton_method(:__before_action_name) do ||
             name
           end
 
+          _update_action_dags(name, description, before_action_name, action_block)
+        end
+
+        def check(description, checked_action_name=nil, &action_block)
+          check_action_name =  checked_action_name  || __before_action_name
+
+          _action_dags = __action_dags
+          _action_dags[check_action_name][:examples] << {
+            description: description,
+            block: action_block,
+          }
+          idempotently_define_singleton_method(:__action_dags) do ||
+            _action_dags
+          end
+        end
+
+        def _update_action_dags(name, action_description, before_action_name, action_block)
           _action_dags = __action_dags
           _action_dags[name] = {
             forwards: [],
@@ -105,19 +99,6 @@ module RSpec
             forwards: _action_dags[before_action_name][:forwards] | [name],
             backwards: _action_dags[before_action_name][:backwards],
           })
-          idempotently_define_singleton_method(:__action_dags) do ||
-            _action_dags
-          end
-        end
-
-        def check(description, checked_action_name=nil, &action_block)
-          check_action_name =  checked_action_name  || __before_action_name
-
-          _action_dags = __action_dags
-          _action_dags[check_action_name][:examples] << {
-            description: description,
-            block: action_block,
-          }
           idempotently_define_singleton_method(:__action_dags) do ||
             _action_dags
           end
