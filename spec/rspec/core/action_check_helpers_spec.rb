@@ -89,27 +89,5 @@ module RSpec::Core
       end
     end
 
-    actions 'use before_action_name' do
-      action 'set nadeko is cute', :nadeko do
-        @nadeko_is = 'cute'
-      end
-      check 'nadeko_is = "cute"' do
-        expect(@nadeko_is).to eq 'cute'
-      end
-
-      action 'set rikka is cute' do
-        @rikka_is = 'cute'
-      end
-      check 'nadeko_is = "cute" and rikka_is = "cute"' do
-        expect(@nadeko_is).to eq 'cute'
-        expect(@rikka_is).to eq 'cute'
-      end
-
-      check 'nadeko_is = "cute" and rikka_is is nil', :nadeko do
-        expect(@nadeko_is).to eq 'cute'
-        expect(@rikka_is).to be_nil
-      end
-
-    end
   end
 end

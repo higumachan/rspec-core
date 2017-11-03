@@ -47,26 +47,22 @@ module RSpec
           _update_action_dags(name, description, before_action_name, Proc.new{})
 
           context do
-            idempotently_define_singleton_method(:__before_action_name) do ||
-              name
-            end
+            _update_before_action_name(name)
             self.module_exec(&branch_block)
           end
         end
 
-        def action(description, name=nil, before_action_name=nil, &action_block)
-          before_action_name = (not before_action_name.nil?) ? before_action_name : __before_action_name
-          name = name || "#{description.gsub(/ /, "_")}_#{__action_dags.size}".to_sym
+        def action(description, &action_block)
+          before_action_name = __before_action_name
+          name = "#{description.gsub(/ /, "_")}_#{__action_dags.size}".to_sym
 
-          idempotently_define_singleton_method(:__before_action_name) do ||
-            name
-          end
+          _update_before_action_name(name)
 
           _update_action_dags(name, description, before_action_name, action_block)
         end
 
-        def check(description, checked_action_name=nil, &action_block)
-          check_action_name =  checked_action_name  || __before_action_name
+        def check(description, &action_block)
+          check_action_name =  __before_action_name
 
           _action_dags = __action_dags
           _action_dags[check_action_name][:examples] << {
@@ -102,6 +98,13 @@ module RSpec
           idempotently_define_singleton_method(:__action_dags) do ||
             _action_dags
           end
+        end
+
+        def _update_before_action_name(name)
+          idempotently_define_singleton_method(:__before_action_name) do ||
+            name
+          end
+
         end
       end
     end
